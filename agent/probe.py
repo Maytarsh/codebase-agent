@@ -1,14 +1,13 @@
 """One live API call, printed in full.
 
-Run this before writing any loop code. It sends a single request with the tools
-declared and prints what comes back, without executing anything — so you can see
-an actual `tool_use` block before writing code that handles one.
+Run this to see what a `tool_use` block actually looks like coming back from the
+API, without a loop and without executing anything.
 
     uv run python -m agent.probe
     uv run python -m agent.probe "Where is the path confinement implemented?"
 
-This is a debugging entry point, not part of the agent. It never calls a tool and
-never loops: it stops at the model's first response.
+It sends the same model, system prompt and tools the agent does, so what you see
+here is exactly the agent's first turn — it simply stops instead of continuing.
 """
 
 from __future__ import annotations
@@ -18,20 +17,9 @@ import sys
 
 import anthropic
 
+from agent.loop import MAX_TOKENS, MODEL, SYSTEM
 from agent.schemas import api_schemas
-
-MODEL = "claude-opus-5"
-MAX_TOKENS = 4096
-
-# USD per million tokens, from the Claude API pricing page.
-INPUT_COST_PER_MTOK = 5.00
-OUTPUT_COST_PER_MTOK = 25.00
-
-SYSTEM = (
-    "You answer questions about a code repository by calling the tools provided. "
-    "Always cite file paths and line numbers. Use the tools rather than guessing "
-    "from prior knowledge."
-)
+from agent.usage import Usage
 
 DEFAULT_QUESTION = "Which file defines the ToolError class, and what raises it?"
 
@@ -66,22 +54,9 @@ def main() -> None:
         elif block.type == "thinking":
             print("       (thinking happened; its text is not returned by default)")
 
-    usage = response.usage
-    cache_read = usage.cache_read_input_tokens or 0
-    cache_write = usage.cache_creation_input_tokens or 0
-    cost = (
-        usage.input_tokens * INPUT_COST_PER_MTOK
-        + usage.output_tokens * OUTPUT_COST_PER_MTOK
-    ) / 1_000_000
-
-    print(
-        f"\nusage: input={usage.input_tokens} output={usage.output_tokens} "
-        f"cache_read={cache_read} cache_write={cache_write}"
-    )
-    # input_tokens counts only the uncached remainder, so the real prompt size is
-    # the sum of all three input figures.
-    print(f"prompt tokens total: {usage.input_tokens + cache_read + cache_write}")
-    print(f"cost: ${cost:.6f}")
+    usage = Usage()
+    usage.add(response.usage)
+    print(f"\nusage: {usage}")
 
     print("\n--- raw response ---")
     print(response.model_dump_json(indent=2))
