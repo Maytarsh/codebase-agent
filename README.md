@@ -24,6 +24,39 @@ Built one section at a time. What exists today:
 | `agent/probe.py` | A debugging entry point: one live request, printed in full, with no loop and nothing executed. |
 | `tests/` | The five failure modes of the loop, replayed from cassettes. |
 
+## Measurement
+
+Ten questions about this repository, each with the file a correct answer has to
+cite, and one variable changed between runs:
+
+```sh
+uv run python bench/run.py --descriptions good                    # control
+uv run python bench/run.py --descriptions vague                   # what the tools do
+uv run python bench/run.py --descriptions vague --system terse    # …and no hint anywhere
+```
+
+Tool descriptions are the only thing the model sees when deciding whether to
+call a tool, so they are prompt engineering with a bill attached. The shipped
+ones say *when* to reach for each tool; `vague` swaps in the version most people
+write first and changes nothing else. Degrading a tuned description is one
+variable — tuning a vague one until the number improves would confound the
+change with everything tried along the way.
+
+That third run exists because the first two were not one variable. The system
+prompt also says "search before you read", so `vague` alone had removed one of
+two copies of the guidance rather than the guidance. `--system terse` drops that
+sentence too, and the flags stay separate so an effect could be attributed to
+one of them. The mistake, and what it cost, are in the write-up.
+
+Roughly $1 a run. Scoring is on cited files, which is mechanical; the prose you
+read yourself.
+
+**The result was a null**, and [`bench/RESULTS.md`](bench/RESULTS.md) is the
+write-up: 10/10 in every condition, a two-turn spread across all three — the
+same as the spread on one question. The interesting part is why the task turned
+out to have no headroom, and what would need to change to measure the effect at
+all.
+
 ## Development
 
 Managed with [uv](https://docs.astral.sh/uv/).
