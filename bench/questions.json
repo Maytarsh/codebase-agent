@@ -1,0 +1,79 @@
+{
+  "comment": [
+    "Ten questions about this repository, each with the file a correct answer",
+    "has to cite. Every expected answer was checked with grep before it was",
+    "written down — the ground truth is the point, and ground truth nobody",
+    "verified is just a second opinion.",
+    "",
+    "Scoring is on cited files, not on prose. That is mechanical, which is what",
+    "makes it worth automating; whether the prose is any good you read yourself.",
+    "A question can legitimately cite more files than are listed, so a hit means",
+    "the expected files are a subset of the cited ones.",
+    "",
+    "The mix is deliberate. Questions 1, 4, 8 and 9 are lookups that one good",
+    "search should answer. Questions 2, 5 and 10 ask why something is the way it",
+    "is, which the model can only answer by reading around the line it found."
+  ],
+  "questions": [
+    {
+      "id": "toolerror",
+      "question": "Which file defines the ToolError exception, and how many places raise it?",
+      "expect_files": ["agent/tools.py"],
+      "note": "10 raise sites, all in tools.py."
+    },
+    {
+      "id": "confinement",
+      "question": "How does this agent stop the model from reading files outside the repository, and why does it resolve the path before checking it rather than after?",
+      "expect_files": ["agent/tools.py"],
+      "note": "_resolve_within: resolve() collapses .. and follows symlinks, then is_relative_to."
+    },
+    {
+      "id": "unknown-tool",
+      "question": "What happens when the model asks for a tool that does not exist?",
+      "expect_files": ["agent/loop.py"],
+      "note": "execute_tool_call returns an is_error result listing the available tools."
+    },
+    {
+      "id": "search-cap",
+      "question": "At most how many matches does the search tool return, and what does it do when it reaches that limit?",
+      "expect_files": ["agent/tools.py"],
+      "note": "MAX_SEARCH_MATCHES = 50, then appends a 'stopped at 50 matches' note."
+    },
+    {
+      "id": "parallel",
+      "question": "Why does the loop put every tool result from one turn into a single user message instead of sending them separately?",
+      "expect_files": ["agent/loop.py"],
+      "note": "Splitting them teaches the model to stop making parallel calls; no error is raised."
+    },
+    {
+      "id": "sdk-seam",
+      "question": "Which class wraps the Anthropic SDK and actually sends a request to the API?",
+      "expect_files": ["agent/client.py"],
+      "note": "LiveClient. probe.py and __main__.py import anthropic too, but only to construct it."
+    },
+    {
+      "id": "replay-check",
+      "question": "What does the replaying client verify before it will serve any recorded response?",
+      "expect_files": ["agent/client.py"],
+      "note": "request_config: model, max_tokens, system, tools, output_schema — checked in __init__."
+    },
+    {
+      "id": "pricing",
+      "question": "What per-million-token prices are used to work out what a run cost?",
+      "expect_files": ["agent/usage.py"],
+      "note": "$5 input, $25 output, $0.50 cache read, $6.25 cache write."
+    },
+    {
+      "id": "answer-shape",
+      "question": "What are the fields of a final answer, and what values can confidence take?",
+      "expect_files": ["agent/answer.py"],
+      "note": "answer, citations, confidence; high | medium | low."
+    },
+    {
+      "id": "root-absent",
+      "question": "Why is the repository root not a parameter in any tool's JSON schema?",
+      "expect_files": ["agent/schemas.py"],
+      "note": "Bound by the harness so the model cannot choose it; the comment above TOOLS says so."
+    }
+  ]
+}
