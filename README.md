@@ -16,13 +16,13 @@ Built one section at a time. What exists today:
 |---|---|
 | `agent/tools.py` | The three tools the agent calls: `list_files`, `search`, `read_file`. They know nothing about the model or the API. Paths chosen by the model are resolved and confined to the repository root before any file is opened, and every result is capped, because tool output becomes prompt tokens. |
 | `agent/schemas.py` | The same three tools described in JSON Schema, each kept in one object alongside the function that implements it. The seam between plain Python and the API. |
+| `agent/answer.py` | The shape of a final answer — prose, citations, confidence — enforced by the API rather than hoped for. Turns "is this right?" into a field comparison instead of an essay review. |
 | `agent/loop.py` | The agent: dispatch tool calls, feed results back, repeat until the model stops asking. Handles parallel calls, turns recoverable failures into `is_error` results, and stops at a turn cap. |
 | `agent/usage.py` | Token accounting and cost for a run. |
 | `agent/__main__.py` | The CLI. |
 | `agent/probe.py` | A debugging entry point: one live request, printed in full, with no loop and nothing executed. |
 
-Still to come: a schema-constrained final answer, and the record/replay test
-harness.
+Still to come: the record/replay test harness.
 
 ## Development
 
@@ -38,6 +38,14 @@ and cost go to stderr, so the answer stays pipeable:
 ```sh
 uv run python -m agent "Which file defines ToolError, and what raises it?"
 uv run python -m agent --repo ~/other/project --max-turns 5 "How is retry configured?"
+```
+
+Answers come back as a fixed structure — a short prose answer, one citation per
+file and line it relied on, and a confidence level. `--json` emits that structure
+directly, which is what makes scoring a batch of questions scriptable:
+
+```sh
+uv run python -m agent --json "Which file defines ToolError?" | jq '.citations[].path'
 ```
 
 See one raw response without running the loop or executing any tool — the same
