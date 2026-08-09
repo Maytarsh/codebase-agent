@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "config": {
+    "model": "claude-opus-5",
+    "max_tokens": 4096,
+    "system": "You answer questions about a code repository by calling the tools provided.\n\nWork only from evidence you find in the repository, never from prior knowledge about similarly-named projects. Search before you read: searching is far cheaper than opening files one at a time. When you have the answer, return it in the required structure, citing every file and line you actually read.",
+    "tools": [
+      {
+        "name": "list_files",
+        "description": "List files in the repository. Call this first to get oriented when you do not know the layout yet. Prefer a narrow glob over listing everything.",
+        "strict": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Glob relative to the repository root, e.g. '**/*.py' or 'src/**/*.ts'. Omit to list every file."
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "search",
+        "description": "Search the repository for a regular expression and return matching lines with their file paths and line numbers. Call this before read_file whenever you do not already know which file to open \u2014 it is far cheaper than reading files one by one.",
+        "strict": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Python regular expression. Prefix with '(?i)' for a case-insensitive search."
+            },
+            "glob": {
+              "type": "string",
+              "description": "Restrict the search to files matching this glob."
+            }
+          },
+          "required": [
+            "pattern"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "read_file",
+        "description": "Read a file and return its lines, numbered. Call this once search has told you which file matters, and pass a line range when you only need part of a large file.",
+        "strict": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "File path relative to the repository root."
+            },
+            "start_line": {
+              "type": "integer",
+              "description": "First line to return, 1-indexed. Omit to start at the top."
+            },
+            "end_line": {
+              "type": "integer",
+              "description": "Last line to return, inclusive. Omit to read to the end."
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "output_schema": {
+      "$defs": {
+        "Citation": {
+          "additionalProperties": false,
+          "description": "One piece of evidence, checkable by opening the file at that line.",
+          "properties": {
+            "path": {
+              "description": "File path, relative to the repository root.",
+              "title": "Path",
+              "type": "string"
+            },
+            "line": {
+              "description": "1-indexed line number the claim rests on.",
+              "title": "Line",
+              "type": "integer"
+            },
+            "detail": {
+              "description": "What this line shows, in one short sentence.",
+              "title": "Detail",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "line",
+            "detail"
+          ],
+          "title": "Citation",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A final answer plus the evidence it rests on.",
+      "properties": {
+        "answer": {
+          "description": "The answer to the question, in at most three sentences. Plain prose: no markdown headings, no bullet lists, no code blocks. Answer only what was asked and stop.",
+          "title": "Answer",
+          "type": "string"
+        },
+        "citations": {
+          "description": "Every file and line the answer relies on. Cite what you actually read, not what you assume is there.",
+          "items": {
+            "$ref": "#/$defs/Citation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "confidence": {
+          "description": "high when the evidence is direct and complete; medium when it is partial or inferred; low when the repository did not really answer the question.",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "answer",
+        "citations",
+        "confidence"
+      ],
+      "title": "Answer",
+      "type": "object"
+    }
+  },
+  "interactions": [
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What do calc.py and main.py contain?"
+        }
+      ],
+      "response": {
+        "id": "msg_fixture_4a2f8fa7f5bf",
+        "container": null,
+        "content": [
+          {
+            "id": "toolu_01",
+            "caller": null,
+            "input": {
+              "path": "calc.py"
+            },
+            "name": "read_file",
+            "type": "tool_use"
+          },
+          {
+            "id": "toolu_02",
+            "caller": null,
+            "input": {
+              "path": "main.py"
+            },
+            "name": "read_file",
+            "type": "tool_use"
+          }
+        ],
+        "model": "claude-opus-5",
+        "role": "assistant",
+        "stop_details": null,
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "inference_geo": null,
+          "input_tokens": 1500,
+          "output_tokens": 120,
+          "output_tokens_details": null,
+          "server_tool_use": null,
+          "service_tier": null
+        }
+      }
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What do calc.py and main.py contain?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_01",
+              "caller": null,
+              "input": {
+                "path": "calc.py"
+              },
+              "name": "read_file",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_02",
+              "caller": null,
+              "input": {
+                "path": "main.py"
+              },
+              "name": "read_file",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01",
+              "content": " 1 | \"\"\"Arithmetic helpers.\"\"\"\n 2 | \n 3 | \n 4 | def add(left, right):\n 5 |     \"\"\"Return the sum of two numbers.\"\"\"\n 6 |     return left + right\n 7 | \n 8 | \n 9 | def divide(left, right):\n10 |     \"\"\"Return left divided by right.\"\"\"\n11 |     if right == 0:\n12 |         raise ValueError(\"cannot divide by zero\")\n13 |     return left / right"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_02",
+              "content": " 1 | \"\"\"Entry point for the fixture project.\"\"\"\n 2 | \n 3 | from calc import add, divide\n 4 | \n 5 | \n 6 | def main():\n 7 |     print(add(2, 3))\n 8 |     print(divide(10, 2))\n 9 | \n10 | \n11 | if __name__ == \"__main__\":\n12 |     main()"
+            }
+          ]
+        }
+      ],
+      "response": {
+        "id": "msg_fixture_1fcf1a8b8448",
+        "container": null,
+        "content": [
+          {
+            "citations": null,
+            "text": "{\"answer\": \"calc.py defines add and divide; main.py calls both and prints the results.\", \"citations\": [{\"path\": \"calc.py\", \"line\": 4, \"detail\": \"def add(left, right).\"}, {\"path\": \"main.py\", \"line\": 6, \"detail\": \"def main() calls add and divide.\"}], \"confidence\": \"high\"}",
+            "type": "text",
+            "parsed_output": {
+              "answer": "calc.py defines add and divide; main.py calls both and prints the results.",
+              "citations": [
+                {
+                  "path": "calc.py",
+                  "line": 4,
+                  "detail": "def add(left, right)."
+                },
+                {
+                  "path": "main.py",
+                  "line": 6,
+                  "detail": "def main() calls add and divide."
+                }
+              ],
+              "confidence": "high"
+            }
+          }
+        ],
+        "model": "claude-opus-5",
+        "role": "assistant",
+        "stop_details": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "inference_geo": null,
+          "input_tokens": 1500,
+          "output_tokens": 150,
+          "output_tokens_details": null,
+          "server_tool_use": null,
+          "service_tier": null
+        }
+      }
+    }
+  ]
+}

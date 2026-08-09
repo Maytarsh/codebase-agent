@@ -17,9 +17,7 @@ import sys
 
 import anthropic
 
-from agent.answer import Answer
-from agent.loop import MAX_TOKENS, MODEL, SYSTEM
-from agent.schemas import api_schemas
+from agent.client import LiveClient
 from agent.usage import Usage
 
 DEFAULT_QUESTION = "Which file defines the ToolError class, and what raises it?"
@@ -28,17 +26,10 @@ DEFAULT_QUESTION = "Which file defines the ToolError class, and what raises it?"
 def main() -> None:
     question = " ".join(sys.argv[1:]) or DEFAULT_QUESTION
 
-    # Reads ANTHROPIC_API_KEY from the environment.
-    client = anthropic.Anthropic()
-
-    response = client.messages.parse(
-        model=MODEL,
-        max_tokens=MAX_TOKENS,
-        system=SYSTEM,
-        tools=api_schemas(),
-        output_format=Answer,
-        messages=[{"role": "user", "content": question}],
-    )
+    # One turn of exactly what the agent sends, because it goes through the same
+    # client the agent uses. Reads ANTHROPIC_API_KEY from the environment.
+    client = LiveClient(anthropic.Anthropic())
+    response = client.send([{"role": "user", "content": question}])
 
     print(f"question:    {question}")
     print(f"model:       {response.model}")
