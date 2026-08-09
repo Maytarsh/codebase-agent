@@ -7,6 +7,11 @@ dependencies = ["anthropic>=0.40", "pydantic>=2"]
 [dependency-groups]
 dev = ["pytest>=8"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Puts tests/ on sys.path so the tests can import conftest helpers by name.
+pythonpath = ["tests"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

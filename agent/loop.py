@@ -11,21 +11,12 @@ from pathlib import Path
 from typing import Any
 
 from agent.answer import Answer
-from agent.schemas import TOOLS_BY_NAME, api_schemas
+from agent.client import ModelClient
+from agent.schemas import TOOLS_BY_NAME
 from agent.tools import ToolError
 from agent.usage import Usage
 
-MODEL = "claude-opus-5"
-MAX_TOKENS = 4096
 MAX_TURNS = 10
-
-SYSTEM = (
-    "You answer questions about a code repository by calling the tools provided.\n\n"
-    "Work only from evidence you find in the repository, never from prior knowledge "
-    "about similarly-named projects. Search before you read: searching is far cheaper "
-    "than opening files one at a time. When you have the answer, return it in the "
-    "required structure, citing every file and line you actually read."
-)
 
 
 def _tool_result(
@@ -96,7 +87,7 @@ class Result:
 
 
 def run(
-    client: Any,
+    client: ModelClient,
     root: Path,
     question: str,
     *,
@@ -104,30 +95,20 @@ def run(
 ) -> Result:
     """Answer `question` about the repository at `root`.
 
-    `client` is injected rather than constructed here. Today it is an
-    `anthropic.Anthropic`; that argument is the seam the record/replay harness
-    will later slot into.
+    `client` is injected rather than constructed here, and is only ever asked to
+    `send` messages. That argument is the seam: pass a `LiveClient` and this
+    talks to the API, pass a `ReplayingClient` and the identical code path runs
+    offline against a cassette.
     """
     messages: list[dict[str, Any]] = [{"role": "user", "content": question}]
     usage = Usage()
     last_text = ""
 
     for turn in range(1, max_turns + 1):
-        # parse() is create() plus schema enforcement and validation: the API is
-        # told the answer must match Answer's schema, and the SDK hands back a
-        # validated instance on `parsed_output`. On turns that end in a tool call
-        # there is no final answer yet, so `parsed_output` is None.
-        response = client.messages.parse(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            system=SYSTEM,
-            tools=api_schemas(),
-            output_format=Answer,
-            # A snapshot, not the live list. We keep appending to `messages` after
-            # this call returns, and anything that holds on to the request — a
-            # recording harness, a logger — must not see it change underneath.
-            messages=list(messages),
-        )
+        # A snapshot, not the live list. We keep appending to `messages` after
+        # this call returns, and anything that holds on to the request — the
+        # recording client, a logger — must not see it change underneath.
+        response = client.send(list(messages))
         usage.add(response.usage)
 
         # Echo the assistant turn back whole. `tool_use` blocks must survive

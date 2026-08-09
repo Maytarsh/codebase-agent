@@ -1,0 +1,334 @@
+{
+  "version": 1,
+  "config": {
+    "model": "claude-opus-5",
+    "max_tokens": 4096,
+    "system": "You answer questions about a code repository by calling the tools provided.\n\nWork only from evidence you find in the repository, never from prior knowledge about similarly-named projects. Search before you read: searching is far cheaper than opening files one at a time. When you have the answer, return it in the required structure, citing every file and line you actually read.",
+    "tools": [
+      {
+        "name": "list_files",
+        "description": "List files in the repository. Call this first to get oriented when you do not know the layout yet. Prefer a narrow glob over listing everything.",
+        "strict": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Glob relative to the repository root, e.g. '**/*.py' or 'src/**/*.ts'. Omit to list every file."
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "search",
+        "description": "Search the repository for a regular expression and return matching lines with their file paths and line numbers. Call this before read_file whenever you do not already know which file to open \u2014 it is far cheaper than reading files one by one.",
+        "strict": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "string",
+              "description": "Python regular expression. Prefix with '(?i)' for a case-insensitive search."
+            },
+            "glob": {
+              "type": "string",
+              "description": "Restrict the search to files matching this glob."
+            }
+          },
+          "required": [
+            "pattern"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "read_file",
+        "description": "Read a file and return its lines, numbered. Call this once search has told you which file matters, and pass a line range when you only need part of a large file.",
+        "strict": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "File path relative to the repository root."
+            },
+            "start_line": {
+              "type": "integer",
+              "description": "First line to return, 1-indexed. Omit to start at the top."
+            },
+            "end_line": {
+              "type": "integer",
+              "description": "Last line to return, inclusive. Omit to read to the end."
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "output_schema": {
+      "$defs": {
+        "Citation": {
+          "additionalProperties": false,
+          "description": "One piece of evidence, checkable by opening the file at that line.",
+          "properties": {
+            "path": {
+              "description": "File path, relative to the repository root.",
+              "title": "Path",
+              "type": "string"
+            },
+            "line": {
+              "description": "1-indexed line number the claim rests on.",
+              "title": "Line",
+              "type": "integer"
+            },
+            "detail": {
+              "description": "What this line shows, in one short sentence.",
+              "title": "Detail",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "line",
+            "detail"
+          ],
+          "title": "Citation",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A final answer plus the evidence it rests on.",
+      "properties": {
+        "answer": {
+          "description": "The answer to the question, in at most three sentences. Plain prose: no markdown headings, no bullet lists, no code blocks. Answer only what was asked and stop.",
+          "title": "Answer",
+          "type": "string"
+        },
+        "citations": {
+          "description": "Every file and line the answer relies on. Cite what you actually read, not what you assume is there.",
+          "items": {
+            "$ref": "#/$defs/Citation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "confidence": {
+          "description": "high when the evidence is direct and complete; medium when it is partial or inferred; low when the repository did not really answer the question.",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "answer",
+        "citations",
+        "confidence"
+      ],
+      "title": "Answer",
+      "type": "object"
+    }
+  },
+  "interactions": [
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What does this repository do?"
+        }
+      ],
+      "response": {
+        "id": "msg_fixture_4d5676d14e01",
+        "container": null,
+        "content": [
+          {
+            "id": "toolu_01",
+            "caller": null,
+            "input": {
+              "pattern": "**/*.py"
+            },
+            "name": "list_files",
+            "type": "tool_use"
+          }
+        ],
+        "model": "claude-opus-5",
+        "role": "assistant",
+        "stop_details": null,
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "inference_geo": null,
+          "input_tokens": 1500,
+          "output_tokens": 120,
+          "output_tokens_details": null,
+          "server_tool_use": null,
+          "service_tier": null
+        }
+      }
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What does this repository do?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_01",
+              "caller": null,
+              "input": {
+                "pattern": "**/*.py"
+              },
+              "name": "list_files",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01",
+              "content": "calc.py\nmain.py"
+            }
+          ]
+        }
+      ],
+      "response": {
+        "id": "msg_fixture_4b1c947002a4",
+        "container": null,
+        "content": [
+          {
+            "id": "toolu_02",
+            "caller": null,
+            "input": {
+              "pattern": "**/*.md"
+            },
+            "name": "list_files",
+            "type": "tool_use"
+          }
+        ],
+        "model": "claude-opus-5",
+        "role": "assistant",
+        "stop_details": null,
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "inference_geo": null,
+          "input_tokens": 1500,
+          "output_tokens": 120,
+          "output_tokens_details": null,
+          "server_tool_use": null,
+          "service_tier": null
+        }
+      }
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What does this repository do?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_01",
+              "caller": null,
+              "input": {
+                "pattern": "**/*.py"
+              },
+              "name": "list_files",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01",
+              "content": "calc.py\nmain.py"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_02",
+              "caller": null,
+              "input": {
+                "pattern": "**/*.md"
+              },
+              "name": "list_files",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_02",
+              "content": "README.md"
+            }
+          ]
+        }
+      ],
+      "response": {
+        "id": "msg_fixture_6f22884f9773",
+        "container": null,
+        "content": [
+          {
+            "id": "toolu_03",
+            "caller": null,
+            "input": {
+              "pattern": "**/*"
+            },
+            "name": "list_files",
+            "type": "tool_use"
+          }
+        ],
+        "model": "claude-opus-5",
+        "role": "assistant",
+        "stop_details": null,
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "cache_creation": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "inference_geo": null,
+          "input_tokens": 1500,
+          "output_tokens": 120,
+          "output_tokens_details": null,
+          "server_tool_use": null,
+          "service_tier": null
+        }
+      }
+    }
+  ]
+}

@@ -3,6 +3,12 @@
     uv run python -m agent "Which file defines ToolError?"
     uv run python -m agent --repo ~/some/project "Where is retry configured?"
     uv run python -m agent --json "Which file defines ToolError?" | jq .citations
+
+Re-recording a cassette is one command, and replaying it is the same command
+with one word changed:
+
+    uv run python -m agent --record tests/cassettes/happy_path.json "..."
+    uv run python -m agent --replay tests/cassettes/happy_path.json "..."
 """
 
 from __future__ import annotations
@@ -11,8 +17,7 @@ import argparse
 import sys
 from pathlib import Path
 
-import anthropic
-
+from agent.client import LiveClient, ModelClient, RecordingClient, ReplayingClient
 from agent.loop import MAX_TURNS, Result, run
 
 
@@ -32,6 +37,18 @@ def render(result: Result) -> str:
         lines.append("")
     lines.append(f"confidence: {answer.confidence}")
     return "\n".join(lines)
+
+
+def build_client(args: argparse.Namespace) -> ModelClient:
+    """Pick a client from the flags. The loop cannot tell the difference."""
+    if args.replay:
+        return ReplayingClient(args.replay)
+    # Imported here so that --replay works without the SDK's key check ever
+    # running: replaying is meant to work with ANTHROPIC_API_KEY unset.
+    import anthropic
+
+    live = LiveClient(anthropic.Anthropic())
+    return RecordingClient(live, args.record) if args.record else live
 
 
 def main() -> int:
@@ -56,6 +73,19 @@ def main() -> int:
         action="store_true",
         help="Emit the answer as JSON, for scoring a batch of questions.",
     )
+    cassette = parser.add_mutually_exclusive_group()
+    cassette.add_argument(
+        "--record",
+        type=Path,
+        metavar="CASSETTE",
+        help="Call the API and write every exchange to this cassette file.",
+    )
+    cassette.add_argument(
+        "--replay",
+        type=Path,
+        metavar="CASSETTE",
+        help="Answer from this cassette instead of the API. Needs no API key.",
+    )
     args = parser.parse_args()
 
     root = args.repo.expanduser().resolve()
@@ -63,9 +93,7 @@ def main() -> int:
         print(f"Not a directory: {root}", file=sys.stderr)
         return 2
 
-    result = run(
-        anthropic.Anthropic(), root, args.question, max_turns=args.max_turns
-    )
+    result = run(build_client(args), root, args.question, max_turns=args.max_turns)
 
     # The answer goes to stdout and everything else to stderr, so the answer stays
     # pipeable — into jq, or into a scoring script.
