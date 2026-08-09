@@ -88,15 +88,27 @@ uv run python -m agent --repo tests/fixture_repo --record /tmp/session.json "Whi
 uv run python -m agent --repo tests/fixture_repo --replay /tmp/session.json "Which file defines add?"
 ```
 
-The five committed cassettes are not live recordings. Their model responses are
-written by hand in `tests/make_cassettes.py` and pushed through the same
-recording client, which is the whole advantage of the format: a model that never
-stops calling tools, or one that asks for `/etc/passwd`, becomes a fixture you
-author rather than a recording you wait for. The tool results in them are real.
+Four of the five committed cassettes are not live recordings. Their model
+responses are written by hand in `tests/make_cassettes.py` and pushed through the
+same recording client, which is the whole advantage of the format: a model that
+never stops calling tools, or one that asks for `/etc/passwd`, becomes a fixture
+you author rather than a recording you wait for. The tool results in them are
+real either way — the loop runs the actual tools while recording.
+
+`happy_path.json` is the exception, and deliberately so. An authored response
+encodes what its author believed the API returns, so a suite built only on them
+can be green against a fiction. This one was: the authored version had the model
+searching serially, one tool call per turn, while the live recording that
+replaced it calls two tools in parallel on both turns. Keep one cassette that
+reality wrote.
 
 ```sh
-uv run python tests/make_cassettes.py    # rebuild all five
+uv run python tests/make_cassettes.py    # rebuild the four authored ones
 ```
+
+Re-recording the live one is the `--record` command above. Both are needed after
+a change to the system prompt, the tool schemas, the answer schema, or the
+fixture repository.
 
 **What these tests do not cover.** The seam sits above HTTP, so they exercise the
 loop but not request construction or serialization — a malformed tool schema

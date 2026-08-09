@@ -146,22 +146,32 @@
         }
       ],
       "response": {
-        "id": "msg_fixture_fcd19707c201",
+        "id": "msg_011Cds3zajxc4s9x3c9vFNmr",
         "container": null,
         "content": [
           {
-            "citations": null,
-            "text": "Searching for the definition first.",
-            "type": "text",
-            "parsed_output": null
+            "signature": "CAISgAIKhwEIEBgCKkAWNoh3SXgfyATdF8q5WB4sIEmtcxMNI5vcCQHJ4jcx0xI7W1wFeMwV5fXY45KLVmxeHwcuzF5U+PWZKmOb9b1hMg1jbGF1ZGUtb3B1cy01OAFCCHRoaW5raW5nWiQ3NTIzOWNiOS02YjVhLTRkZTEtODdkOC01Y2FhYzBiMmI4ZjISDKnXvRhQvHtKIZrkCBoMg10SbotOoZIdMJscIjAmQS6+Cvvt1F0Okl+t+4fD8/wnowyqPMkpcPHioSoFUts33hg71MwpV0APrRPWRgkqJkQMuHN1TKjGqax6h5zjmO0r8jva5u3KNYgXPnQZiWEVorVZrdNbGAE=",
+            "thinking": "",
+            "type": "thinking"
           },
           {
-            "id": "toolu_01",
-            "caller": null,
+            "id": "toolu_01RcdPLUKcFQHh5G3DYY2z6E",
+            "caller": {
+              "type": "direct"
+            },
             "input": {
-              "pattern": "def add"
+              "pattern": "def add\\b"
             },
             "name": "search",
+            "type": "tool_use"
+          },
+          {
+            "id": "toolu_014aQ8EtZMTvHRQwm7gfXvpg",
+            "caller": {
+              "type": "direct"
+            },
+            "input": {},
+            "name": "list_files",
             "type": "tool_use"
           }
         ],
@@ -172,15 +182,20 @@
         "stop_sequence": null,
         "type": "message",
         "usage": {
-          "cache_creation": null,
-          "cache_creation_input_tokens": null,
-          "cache_read_input_tokens": null,
-          "inference_geo": null,
-          "input_tokens": 1500,
-          "output_tokens": 120,
-          "output_tokens_details": null,
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "global",
+          "input_tokens": 1728,
+          "output_tokens": 84,
+          "output_tokens_details": {
+            "thinking_tokens": 10
+          },
           "server_tool_use": null,
-          "service_tier": null
+          "service_tier": "standard"
         }
       }
     },
@@ -194,18 +209,28 @@
           "role": "assistant",
           "content": [
             {
-              "citations": null,
-              "text": "Searching for the definition first.",
-              "type": "text",
-              "parsed_output": null
+              "signature": "CAISgAIKhwEIEBgCKkAWNoh3SXgfyATdF8q5WB4sIEmtcxMNI5vcCQHJ4jcx0xI7W1wFeMwV5fXY45KLVmxeHwcuzF5U+PWZKmOb9b1hMg1jbGF1ZGUtb3B1cy01OAFCCHRoaW5raW5nWiQ3NTIzOWNiOS02YjVhLTRkZTEtODdkOC01Y2FhYzBiMmI4ZjISDKnXvRhQvHtKIZrkCBoMg10SbotOoZIdMJscIjAmQS6+Cvvt1F0Okl+t+4fD8/wnowyqPMkpcPHioSoFUts33hg71MwpV0APrRPWRgkqJkQMuHN1TKjGqax6h5zjmO0r8jva5u3KNYgXPnQZiWEVorVZrdNbGAE=",
+              "thinking": "",
+              "type": "thinking"
             },
             {
-              "id": "toolu_01",
-              "caller": null,
+              "id": "toolu_01RcdPLUKcFQHh5G3DYY2z6E",
+              "caller": {
+                "type": "direct"
+              },
               "input": {
-                "pattern": "def add"
+                "pattern": "def add\\b"
               },
               "name": "search",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_014aQ8EtZMTvHRQwm7gfXvpg",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_files",
               "type": "tool_use"
             }
           ]
@@ -215,24 +240,41 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01",
+              "tool_use_id": "toolu_01RcdPLUKcFQHh5G3DYY2z6E",
               "content": "calc.py:4: def add(left, right):"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_014aQ8EtZMTvHRQwm7gfXvpg",
+              "content": "README.md\ncalc.py\nmain.py"
             }
           ]
         }
       ],
       "response": {
-        "id": "msg_fixture_fcec6e51729a",
+        "id": "msg_011Cds3zt31zdkyY2TCatEXQ",
         "container": null,
         "content": [
           {
-            "id": "toolu_02",
-            "caller": null,
-            "input": {
-              "pattern": "\\badd\\(",
-              "glob": "**/*.py"
+            "id": "toolu_01K4ryZEBdkngKsf9nhpGC21",
+            "caller": {
+              "type": "direct"
             },
-            "name": "search",
+            "input": {
+              "path": "calc.py"
+            },
+            "name": "read_file",
+            "type": "tool_use"
+          },
+          {
+            "id": "toolu_014Q6YZhZ8ttnrwrnX18jb6r",
+            "caller": {
+              "type": "direct"
+            },
+            "input": {
+              "path": "main.py"
+            },
+            "name": "read_file",
             "type": "tool_use"
           }
         ],
@@ -243,15 +285,20 @@
         "stop_sequence": null,
         "type": "message",
         "usage": {
-          "cache_creation": null,
-          "cache_creation_input_tokens": null,
-          "cache_read_input_tokens": null,
-          "inference_geo": null,
-          "input_tokens": 1500,
-          "output_tokens": 120,
-          "output_tokens_details": null,
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "global",
+          "input_tokens": 1892,
+          "output_tokens": 96,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
           "server_tool_use": null,
-          "service_tier": null
+          "service_tier": "standard"
         }
       }
     },
@@ -265,18 +312,28 @@
           "role": "assistant",
           "content": [
             {
-              "citations": null,
-              "text": "Searching for the definition first.",
-              "type": "text",
-              "parsed_output": null
+              "signature": "CAISgAIKhwEIEBgCKkAWNoh3SXgfyATdF8q5WB4sIEmtcxMNI5vcCQHJ4jcx0xI7W1wFeMwV5fXY45KLVmxeHwcuzF5U+PWZKmOb9b1hMg1jbGF1ZGUtb3B1cy01OAFCCHRoaW5raW5nWiQ3NTIzOWNiOS02YjVhLTRkZTEtODdkOC01Y2FhYzBiMmI4ZjISDKnXvRhQvHtKIZrkCBoMg10SbotOoZIdMJscIjAmQS6+Cvvt1F0Okl+t+4fD8/wnowyqPMkpcPHioSoFUts33hg71MwpV0APrRPWRgkqJkQMuHN1TKjGqax6h5zjmO0r8jva5u3KNYgXPnQZiWEVorVZrdNbGAE=",
+              "thinking": "",
+              "type": "thinking"
             },
             {
-              "id": "toolu_01",
-              "caller": null,
+              "id": "toolu_01RcdPLUKcFQHh5G3DYY2z6E",
+              "caller": {
+                "type": "direct"
+              },
               "input": {
-                "pattern": "def add"
+                "pattern": "def add\\b"
               },
               "name": "search",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_014aQ8EtZMTvHRQwm7gfXvpg",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_files",
               "type": "tool_use"
             }
           ]
@@ -286,8 +343,13 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_01",
+              "tool_use_id": "toolu_01RcdPLUKcFQHh5G3DYY2z6E",
               "content": "calc.py:4: def add(left, right):"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_014aQ8EtZMTvHRQwm7gfXvpg",
+              "content": "README.md\ncalc.py\nmain.py"
             }
           ]
         },
@@ -295,13 +357,25 @@
           "role": "assistant",
           "content": [
             {
-              "id": "toolu_02",
-              "caller": null,
-              "input": {
-                "pattern": "\\badd\\(",
-                "glob": "**/*.py"
+              "id": "toolu_01K4ryZEBdkngKsf9nhpGC21",
+              "caller": {
+                "type": "direct"
               },
-              "name": "search",
+              "input": {
+                "path": "calc.py"
+              },
+              "name": "read_file",
+              "type": "tool_use"
+            },
+            {
+              "id": "toolu_014Q6YZhZ8ttnrwrnX18jb6r",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "path": "main.py"
+              },
+              "name": "read_file",
               "type": "tool_use"
             }
           ]
@@ -311,27 +385,32 @@
           "content": [
             {
               "type": "tool_result",
-              "tool_use_id": "toolu_02",
-              "content": "calc.py:4: def add(left, right):\nmain.py:7: print(add(2, 3))"
+              "tool_use_id": "toolu_01K4ryZEBdkngKsf9nhpGC21",
+              "content": " 1 | \"\"\"Arithmetic helpers.\"\"\"\n 2 | \n 3 | \n 4 | def add(left, right):\n 5 |     \"\"\"Return the sum of two numbers.\"\"\"\n 6 |     return left + right\n 7 | \n 8 | \n 9 | def divide(left, right):\n10 |     \"\"\"Return left divided by right.\"\"\"\n11 |     if right == 0:\n12 |         raise ValueError(\"cannot divide by zero\")\n13 |     return left / right"
+            },
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_014Q6YZhZ8ttnrwrnX18jb6r",
+              "content": " 1 | \"\"\"Entry point for the fixture project.\"\"\"\n 2 | \n 3 | from calc import add, divide\n 4 | \n 5 | \n 6 | def main():\n 7 |     print(add(2, 3))\n 8 |     print(divide(10, 2))\n 9 | \n10 | \n11 | if __name__ == \"__main__\":\n12 |     main()"
             }
           ]
         }
       ],
       "response": {
-        "id": "msg_fixture_c719a82581d3",
+        "id": "msg_011Cds41B6C9Q5wC81Ccidsk",
         "container": null,
         "content": [
           {
             "citations": null,
-            "text": "{\"answer\": \"add is defined in calc.py and is called once, from main.py. main.py imports it from calc and prints add(2, 3).\", \"citations\": [{\"path\": \"calc.py\", \"line\": 4, \"detail\": \"def add(left, right) \\u2014 the definition.\"}, {\"path\": \"main.py\", \"line\": 3, \"detail\": \"main.py imports add from calc.\"}, {\"path\": \"main.py\", \"line\": 7, \"detail\": \"The only call site: print(add(2, 3)).\"}], \"confidence\": \"high\"}",
+            "text": "{\"answer\":\"add is defined in calc.py (line 4) as a two-argument function returning left + right. Its only caller in the repository is main() in main.py, which imports add from calc and calls add(2, 3).\",\"citations\":[{\"path\":\"calc.py\",\"line\":4,\"detail\":\"Definition of add(left, right) in calc.py.\"},{\"path\":\"main.py\",\"line\":3,\"detail\":\"main.py imports add from calc.\"},{\"path\":\"main.py\",\"line\":7,\"detail\":\"main() calls add(2, 3) \u2014 the only call site.\"}],\"confidence\":\"high\"}",
             "type": "text",
             "parsed_output": {
-              "answer": "add is defined in calc.py and is called once, from main.py. main.py imports it from calc and prints add(2, 3).",
+              "answer": "add is defined in calc.py (line 4) as a two-argument function returning left + right. Its only caller in the repository is main() in main.py, which imports add from calc and calls add(2, 3).",
               "citations": [
                 {
                   "path": "calc.py",
                   "line": 4,
-                  "detail": "def add(left, right) \u2014 the definition."
+                  "detail": "Definition of add(left, right) in calc.py."
                 },
                 {
                   "path": "main.py",
@@ -341,7 +420,7 @@
                 {
                   "path": "main.py",
                   "line": 7,
-                  "detail": "The only call site: print(add(2, 3))."
+                  "detail": "main() calls add(2, 3) \u2014 the only call site."
                 }
               ],
               "confidence": "high"
@@ -355,15 +434,20 @@
         "stop_sequence": null,
         "type": "message",
         "usage": {
-          "cache_creation": null,
-          "cache_creation_input_tokens": null,
-          "cache_read_input_tokens": null,
-          "inference_geo": null,
-          "input_tokens": 1500,
-          "output_tokens": 210,
-          "output_tokens_details": null,
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "global",
+          "input_tokens": 2314,
+          "output_tokens": 185,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
           "server_tool_use": null,
-          "service_tier": null
+          "service_tier": "standard"
         }
       }
     }

@@ -1,25 +1,36 @@
-"""Regenerate the cassettes the test suite replays.
+"""Regenerate the four hand-authored cassettes the test suite replays.
 
     uv run python tests/make_cassettes.py
 
-These five cassettes are not recorded from the live API. The model responses in
-this file are written by hand and fed through `RecordingClient` exactly as live
-ones would be — `RecordingClient` does not care what its inner client is, so a
-scripted stand-in produces a cassette indistinguishable from a real recording.
+**This script does not touch happy_path.json.** That one is recorded against the
+live API and has to be re-made with the CLI:
 
-That is deliberate, and it is the point of the format. Three of the five
-scenarios are ones the live API would rarely or never produce on demand: a model
-that keeps calling tools until the cap, a model that asks for `/etc/passwd`, a
-model that emits two tool calls in one turn. Once responses are data on disk,
-those stop being lucky recordings and become fixtures you author.
+    uv run python -m agent --repo tests/fixture_repo \\
+      --record tests/cassettes/happy_path.json \\
+      "Which file defines add, and what calls it?"
 
-The tool *results* in each cassette are real: the loop runs the actual tools
-against `tests/fixture_repo/` while this script records. So the cassettes still
-prove the dispatch path works — only the model's side is invented.
+The four here are authored rather than recorded, because the API will not
+produce them on demand: a model that keeps calling tools until the turn cap, one
+that asks for `/etc/passwd`, one that emits two tool calls in a single turn, one
+that asks for a file that is not there. The responses below are written by hand
+and fed through `RecordingClient` exactly as live ones would be —
+`RecordingClient` does not care what its inner client is, so a scripted stand-in
+produces a cassette indistinguishable in format from a real recording.
+
+Indistinguishable in format, not in truth, which is why the split exists. An
+authored response encodes what its author believes the API returns, and a wrong
+belief yields a suite that is green against a fiction. The first draft of
+happy_path had the model searching serially, one tool call per turn; the live
+recording that replaced it calls two tools in parallel on both turns. Keep at
+least one cassette that reality wrote.
+
+The tool *results* in every cassette are real either way: the loop runs the
+actual tools against `tests/fixture_repo/` while recording.
 
 Re-run this after changing the system prompt, the tool schemas, the answer
-schema, or the fixture repository. Replay checks all of those and will refuse a
-stale cassette rather than quietly replay it.
+schema, or the fixture repository — and re-record happy_path too, since replay
+checks all of those and will refuse a stale cassette rather than quietly replay
+it.
 """
 
 from __future__ import annotations
@@ -77,12 +88,13 @@ def text(body: str) -> dict[str, Any]:
     return {"type": "text", "text": body}
 
 
-def thinking(body: str) -> dict[str, Any]:          # <-- new
+def thinking(body: str) -> dict[str, Any]:
     """A thinking block, which every real response carries and none of these did.
 
-    The signature is cryptographic on live responses and invented here. That is
-    harmless — fixtures never send one back to the API — but it is exactly why
-    one genuinely recorded cassette is worth more than any number of these.
+    Real ones come back with an empty `thinking` and a 352-character signature —
+    see happy_path.json. The prose here is for whoever reads this file; the
+    signature is the part that has to survive the round trip, and it is fake.
+    Which is the argument for keeping one recorded cassette in the set.
     """
     return {"type": "thinking", "thinking": body, "signature": "fixture-signature"}
 
@@ -108,36 +120,16 @@ def final(answer: str, citations: list[tuple[str, int, str]], confidence: str):
     }
 
 
-# --- the five scenarios -----------------------------------------------------
+# --- the four authored scenarios --------------------------------------------
+#
+# The happy path is deliberately absent. It is recorded live; see the module
+# docstring for the command. Adding it back here would overwrite that recording
+# with a guess, and every test would still pass.
 
 QUESTION = "Which file defines add, and what calls it?"
 
 SCENARIOS: dict[str, dict[str, Any]] = {
-    # 1. Happy path: search, then read, then answer.
-    "happy_path": {
-        "question": QUESTION,
-        "responses": [
-            turn(
-                text("Searching for the definition first."),
-                tool_use("toolu_01", "search", pattern=r"def add"),
-            ),
-            turn(tool_use("toolu_02", "search", pattern=r"\badd\(", glob="**/*.py")),
-            turn(
-                final(
-                    "add is defined in calc.py and is called once, from main.py. "
-                    "main.py imports it from calc and prints add(2, 3).",
-                    [
-                        ("calc.py", 4, "def add(left, right) — the definition."),
-                        ("main.py", 3, "main.py imports add from calc."),
-                        ("main.py", 7, "The only call site: print(add(2, 3))."),
-                    ],
-                    "high",
-                ),
-                output_tokens=210,
-            ),
-        ],
-    },
-    # 2. Tool error recovery: a file that does not exist, then a different plan.
+    # 1. Tool error recovery: a file that does not exist, then a different plan.
     "tool_error": {
         "question": QUESTION,
         "responses": [
@@ -159,7 +151,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             ),
         ],
     },
-    # 3. Turn cap: a model that never stops calling tools. Recorded at three
+    # 2. Turn cap: a model that never stops calling tools. Recorded at three
     #    turns and replayed with max_turns=3, so the cap is what ends the run.
     "turn_cap": {
         "question": "What does this repository do?",
@@ -170,7 +162,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             turn(tool_use("toolu_03", "list_files", pattern="**/*")),
         ],
     },
-    # 4. Path traversal: the model asks for a file outside the root.
+    # 3. Path traversal: the model asks for a file outside the root.
     "path_traversal": {
         "question": "What is in the system password file?",
         "responses": [
@@ -185,7 +177,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             ),
         ],
     },
-    # 5. Parallel tool calls: two tool_use blocks in a single assistant turn.
+    # 4. Parallel tool calls: two tool_use blocks in a single assistant turn.
     "parallel_calls": {
         "question": "What do calc.py and main.py contain?",
         "responses": [
