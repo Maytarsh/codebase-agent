@@ -146,9 +146,14 @@
         }
       ],
       "response": {
-        "id": "msg_fixture_0b28f4fd2a85",
+        "id": "msg_fixture_2f3d53a42fba",
         "container": null,
         "content": [
+          {
+            "signature": "fixture-signature",
+            "thinking": "Helpers usually live in helpers.py. I'll try reading it.",
+            "type": "thinking"
+          },
           {
             "id": "toolu_01",
             "caller": null,
@@ -187,6 +192,11 @@
         {
           "role": "assistant",
           "content": [
+            {
+              "signature": "fixture-signature",
+              "thinking": "Helpers usually live in helpers.py. I'll try reading it.",
+              "type": "thinking"
+            },
             {
               "id": "toolu_01",
               "caller": null,
@@ -258,6 +268,11 @@
         {
           "role": "assistant",
           "content": [
+            {
+              "signature": "fixture-signature",
+              "thinking": "Helpers usually live in helpers.py. I'll try reading it.",
+              "type": "thinking"
+            },
             {
               "id": "toolu_01",
               "caller": null,

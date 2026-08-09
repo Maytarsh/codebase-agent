@@ -116,3 +116,17 @@ def test_parallel_tool_calls_return_in_a_single_message(replay):
         if block.type == "tool_use"
     ]
     assert [result["tool_use_id"] for result in groups[0]] == requested
+
+
+def test_thinking_blocks_are_echoed_back_untouched(replay):
+    """The loop appends `response.content` whole, and thinking is part of it.
+
+    Mostly this test is free: the cassette's second request contains the first
+    turn's thinking block, so dropping it makes the replay safeguard fire before
+    this assertion is ever reached. The assertion is here to name the rule.
+    """
+    result = run(replay("tool_error"), FIXTURE_REPO, QUESTION)
+
+    first = next(m for m in result.messages if m["role"] == "assistant")
+    assert [block.type for block in first["content"]] == ["thinking", "tool_use"]
+    

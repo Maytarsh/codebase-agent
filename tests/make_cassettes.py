@@ -77,6 +77,16 @@ def text(body: str) -> dict[str, Any]:
     return {"type": "text", "text": body}
 
 
+def thinking(body: str) -> dict[str, Any]:          # <-- new
+    """A thinking block, which every real response carries and none of these did.
+
+    The signature is cryptographic on live responses and invented here. That is
+    harmless — fixtures never send one back to the API — but it is exactly why
+    one genuinely recorded cassette is worth more than any number of these.
+    """
+    return {"type": "thinking", "thinking": body, "signature": "fixture-signature"}
+
+
 def tool_use(call_id: str, name: str, **arguments: Any) -> dict[str, Any]:
     return {"type": "tool_use", "id": call_id, "name": name, "input": arguments}
 
@@ -131,7 +141,10 @@ SCENARIOS: dict[str, dict[str, Any]] = {
     "tool_error": {
         "question": QUESTION,
         "responses": [
-            turn(tool_use("toolu_01", "read_file", path="helpers.py")),
+            turn(
+                thinking("Helpers usually live in helpers.py. I'll try reading it."),
+                tool_use("toolu_01", "read_file", path="helpers.py"),
+            ),
             turn(
                 text("That file does not exist; searching instead."),
                 tool_use("toolu_02", "search", pattern=r"def add"),
