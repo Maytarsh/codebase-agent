@@ -17,6 +17,7 @@ import sys
 
 import anthropic
 
+from agent.answer import Answer
 from agent.loop import MAX_TOKENS, MODEL, SYSTEM
 from agent.schemas import api_schemas
 from agent.usage import Usage
@@ -30,11 +31,12 @@ def main() -> None:
     # Reads ANTHROPIC_API_KEY from the environment.
     client = anthropic.Anthropic()
 
-    response = client.messages.create(
+    response = client.messages.parse(
         model=MODEL,
         max_tokens=MAX_TOKENS,
         system=SYSTEM,
         tools=api_schemas(),
+        output_format=Answer,
         messages=[{"role": "user", "content": question}],
     )
 
@@ -54,9 +56,12 @@ def main() -> None:
         elif block.type == "thinking":
             print("       (thinking happened; its text is not returned by default)")
 
+    # None on a turn that ends in a tool call — there is no final answer yet.
+    print(f"\nparsed_output: {response.parsed_output!r}")
+
     usage = Usage()
     usage.add(response.usage)
-    print(f"\nusage: {usage}")
+    print(f"usage: {usage}")
 
     print("\n--- raw response ---")
     print(response.model_dump_json(indent=2))

@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from agent.answer import Answer
 from agent.schemas import TOOLS_BY_NAME, api_schemas
 from agent.tools import ToolError
 from agent.usage import Usage
@@ -22,8 +23,8 @@ SYSTEM = (
     "You answer questions about a code repository by calling the tools provided.\n\n"
     "Work only from evidence you find in the repository, never from prior knowledge "
     "about similarly-named projects. Search before you read: searching is far cheaper "
-    "than opening files one at a time. When you have the answer, state it directly and "
-    "cite the file paths and line numbers you relied on."
+    "than opening files one at a time. When you have the answer, return it in the "
+    "required structure, citing every file and line you actually read."
 )
 
 
@@ -78,12 +79,19 @@ def _text_of(response: Any) -> str:
 
 @dataclass
 class Result:
-    """The outcome of one run."""
+    """The outcome of one run.
 
-    answer: str
+    `answer` is None when the run ended without producing one — either the turn
+    cap was hit, or the model stopped for a reason other than finishing. In that
+    case `partial_text` holds whatever prose it had emitted, which is usually
+    enough to see where it got stuck.
+    """
+
+    answer: Answer | None
     turns: int
     usage: Usage
     stopped_early: bool
+    partial_text: str = ""
     messages: list[dict[str, Any]] = field(repr=False, default_factory=list)
 
 
@@ -105,11 +113,16 @@ def run(
     last_text = ""
 
     for turn in range(1, max_turns + 1):
-        response = client.messages.create(
+        # parse() is create() plus schema enforcement and validation: the API is
+        # told the answer must match Answer's schema, and the SDK hands back a
+        # validated instance on `parsed_output`. On turns that end in a tool call
+        # there is no final answer yet, so `parsed_output` is None.
+        response = client.messages.parse(
             model=MODEL,
             max_tokens=MAX_TOKENS,
             system=SYSTEM,
             tools=api_schemas(),
+            output_format=Answer,
             # A snapshot, not the live list. We keep appending to `messages` after
             # this call returns, and anything that holds on to the request — a
             # recording harness, a logger — must not see it change underneath.
@@ -128,10 +141,11 @@ def run(
 
         if response.stop_reason != "tool_use":
             return Result(
-                answer=text,
+                answer=response.parsed_output,
                 turns=turn,
                 usage=usage,
                 stopped_early=False,
+                partial_text=last_text,
                 messages=messages,
             )
 
@@ -144,9 +158,10 @@ def run(
         messages.append({"role": "user", "content": results})
 
     return Result(
-        answer=last_text,
+        answer=None,
         turns=max_turns,
         usage=usage,
         stopped_early=True,
+        partial_text=last_text,
         messages=messages,
     )
