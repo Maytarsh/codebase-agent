@@ -12,7 +12,13 @@ it out of scope on purpose. These tests are about the loop.
 
 from __future__ import annotations
 
-from conftest import FIXTURE_REPO, errors, tool_calls, tool_results
+from conftest import (
+    FIXTURE_REPO,
+    errors,
+    tool_calls,
+    tool_results,
+    unresolvable_citations,
+)
 
 from agent.loop import run
 
@@ -44,6 +50,12 @@ def test_happy_path(replay):
     assert answer.confidence in {"high", "medium"}
     assert "calc.py" in {citation.path for citation in answer.citations}
     assert result.usage.output_tokens > 0
+
+    # Which lines it cites is the model's call; that they resolve is not. A
+    # citation pointing at a file or a line that does not exist is fabricated,
+    # and fabricated citations are the failure this schema exists to make
+    # visible — so this one belongs with the exact assertions, not the loose ones.
+    assert unresolvable_citations(answer, FIXTURE_REPO) == []
 
 
 def test_tool_error_comes_back_as_a_result_and_the_model_recovers(replay):
